@@ -6,39 +6,54 @@ namespace VegShop.DomainModel
 {
     public class OffersService : IOffersService
     {
-        private readonly IOffersStorage offersStorage;
-
-        public OffersService(IOffersStorage offersStorage, IPriceService priceService)
-        {
-            this.offersStorage = offersStorage;
-        }
+        private readonly Dictionary<Guid, IList<Offer>> offers = new Dictionary<Guid, IList<Offer>>();
+        private readonly object syncObject = new object();
 
         public IList<Offer> GetOffers(Guid productId)
         {
-            return offersStorage.GetProductOffers(productId);
-        }
-
-        public decimal CalculateCost(IEnumerable<Offer> offers, int quantity, decimal unitPrice)
-        {
-            var mostProfitableOffer = offers.Where(o => o.ItemsCount < quantity).OrderByDescending(o => o.ItemsCount).FirstOrDefault();
-            if (mostProfitableOffer == null)
+            lock (syncObject)
             {
-                return unitPrice * quantity;
+                return offers.ContainsKey(productId) ? offers[productId] : new List<Offer>();
             }
-
-            int offerBatchesCount = mostProfitableOffer.ItemsCount / quantity;
-            int standardPriceItemsCount = mostProfitableOffer.ItemsCount % quantity;
-            return offerBatchesCount * mostProfitableOffer.TotalPrice + standardPriceItemsCount * unitPrice;
         }
 
         public void AddOffer(Guid productId, Offer offer)
         {
-            offersStorage.AddOffer(productId, offer);
+            lock (syncObject)
+            {
+                if (offers.ContainsKey(productId))
+                {
+                    if (offers[productId].Any(o => o.ItemsCount == offer.ItemsCount))
+                    {
+                        throw new OfferException($"Can't add offer for product {productId} cause offer with items count {offer.ItemsCount} already exists");
+                    }
+                    offers[productId].Add(offer);
+                }
+                else
+                {
+                    offers.Add(productId, new List<Offer> {offer});
+                }
+            }
         }
 
         public void RemoveOffer(Guid productId, int itemsCount)
         {
-            offersStorage.RemoveOffer(productId, itemsCount);
+            lock (syncObject)
+            {
+                if (offers.ContainsKey(productId))
+                {
+                    var offer = offers[productId].FirstOrDefault(o => o.ItemsCount == itemsCount);
+                    if (offer == null)
+                    {
+                        throw new OfferException($"Can't remove offer for product {productId} and items count {itemsCount} cause such offer doesn't exist");
+                    }
+                    offers[productId].Remove(offer);
+                }
+                else
+                {
+                    throw new OfferException($"Can't remove offer for product {productId} cause offers for this products don't exist");
+                }
+            }
         }
     }
 }

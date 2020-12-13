@@ -8,6 +8,7 @@ namespace VegShop.DomainModel
     public class Cart : ICart, ICartManagement
     {
         private readonly INomenclatureService nomenclatureService;
+        private readonly IOffersCalculator offersCalculator;
         private readonly IOffersService offersService;
         private readonly IWarehouseService warehouseService;
         private readonly IPriceService priceService;
@@ -16,11 +17,14 @@ namespace VegShop.DomainModel
 
         public Cart(
             INomenclatureService nomenclatureService,
+            IOffersCalculator offersCalculator,
             IOffersService offersService,
             IPriceService priceService,
-            IWarehouseService warehouseService)
+            IWarehouseService warehouseService
+            )
         {
             this.nomenclatureService = nomenclatureService;
+            this.offersCalculator = offersCalculator;
             this.offersService = offersService;
             this.priceService = priceService;
             this.warehouseService = warehouseService;
@@ -62,7 +66,7 @@ namespace VegShop.DomainModel
                     continue;
                 }
 
-                totalCost += offersService.CalculateCost(offers, cartItem.Quantity, unitPrice);
+                totalCost += offersCalculator.CalculateCost(offers, cartItem.Quantity, unitPrice);
             }
 
             return totalCost;
