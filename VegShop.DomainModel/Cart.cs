@@ -54,7 +54,6 @@ namespace VegShop.DomainModel
             foreach (var (productId, cartItem) in pairs)
             {
                 var unitPrice = priceService.GetActualPrice(productId, cartItem.DateCreated);
-
                 var offers = offersService.GetOffers(productId);
 
                 if (!offers.Any())
