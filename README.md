@@ -1,1 +1,1 @@
-# Shopping cart for fruit and vegetables shop
+# Checkout system for fruits and vegetables shop
