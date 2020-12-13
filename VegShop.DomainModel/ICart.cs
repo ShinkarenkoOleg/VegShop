@@ -5,12 +5,9 @@ namespace VegShop.DomainModel
 {
     public interface ICart
     {
-        void AddProduct(Guid productId, int quantity);
+        void AddToCart(Guid productId, int quantity);
+        void RemoveFromCart(Guid productId, int quantity);
 
-        void RemoveProduct(Guid productId, int quantity);
-
-        decimal TotalCost();
-
-        IDictionary<Guid, CartItem> GetCartItems();
+        decimal GetTotalCost();
     }
 }

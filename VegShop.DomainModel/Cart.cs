@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace VegShop.DomainModel
 {
-    public class Cart : ICart
+    public class Cart : ICart, ICartManagement
     {
         private readonly INomenclatureService nomenclatureService;
         private readonly IOffersService offersService;
@@ -26,7 +26,7 @@ namespace VegShop.DomainModel
             this.warehouseService = warehouseService;
         }
 
-        public void AddProduct(Guid productId, int quantity)
+        public void AddToCart(Guid productId, int quantity)
         {
             if (!nomenclatureService.DoesProductExists(productId))
             {
@@ -36,7 +36,7 @@ namespace VegShop.DomainModel
             warehouseService.AddToCart(this, productId, quantity);
         }
 
-        public void RemoveProduct(Guid productId, int quantity)
+        public void RemoveFromCart(Guid productId, int quantity)
         {
             if (!nomenclatureService.DoesProductExists(productId))
             {
@@ -46,7 +46,7 @@ namespace VegShop.DomainModel
             warehouseService.RemoveFromCart(this, productId, quantity);
         }
 
-        public decimal TotalCost()
+        public decimal GetTotalCost()
         {
             decimal totalCost = 0;
 
@@ -69,9 +69,38 @@ namespace VegShop.DomainModel
             return totalCost;
         }
 
-        public IDictionary<Guid, CartItem> GetCartItems()
+        public void AddToCartPhysically(Guid productId, int quantity)
         {
-            return cartItems;
+            cartItems.AddOrUpdate(
+                productId,
+                new CartItem(productId, quantity, DateTime.UtcNow),
+                (prId, item) => { item.Quantity += quantity; return item; });
+        }
+
+        public void RemoveFromCartPhysically(Guid productId, int quantity)
+        {
+            var isSuccessful = cartItems.TryGetValue(productId, out var cartItem);
+            if (!isSuccessful)
+            {
+                throw new CartException($"Product {productId} doesn't exist in a cart");
+            }
+
+            if (cartItem.Quantity < quantity)
+            {
+                throw new CartException(
+                    $"Can't delete {quantity} items of Product {productId} cause cart contains only {cartItem.Quantity} items");
+            }
+
+            cartItem.Quantity -= quantity;
+            if (cartItem.Quantity == 0)
+            {
+                isSuccessful = cartItems.TryRemove(productId, out var item);
+
+                if (!isSuccessful)
+                {
+                    throw new CartException($"Can't remove cart item for product {productId} cause such cart item doesn't exist");
+                }
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ namespace VegShop.DomainModel
         void AddToStock(Guid productId, int quantity);
         void RemoveFromStock(Guid productId, int quantity);
 
-        bool AddToCart(Cart cart, Guid productId, int quantity);
-        bool RemoveFromCart(Cart cart, Guid productId, int quantity);
+        void AddToCart(ICartManagement cart, Guid productId, int quantity);
+        void RemoveFromCart(ICartManagement cart, Guid productId, int quantity);
     }
 }
