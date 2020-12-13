@@ -6,33 +6,71 @@ namespace VegShop.DomainModel
 {
     public class PriceService : IPriceService
     {
-        private readonly IPricesStorage pricesStorage;
-
-        public PriceService(IPricesStorage pricesStorage)
-        {
-            this.pricesStorage = pricesStorage;
-        }
+        private readonly Dictionary<Guid, SortedList<DateTime, Price>> prices = new Dictionary<Guid, SortedList<DateTime, Price>>();
+        private readonly object syncObject = new object();
 
         public decimal GetActualPrice(Guid productId, DateTime date)
         {
-            var (startDate, price) = pricesStorage.GetPrices(productId).FirstOrDefault(p => p.Key >= date);
-
-            if (price == null)
+            lock (syncObject)
             {
-                throw new PriceException($"There is no price for specified date {date} for product {productId}");
-            }
+                if (!prices.ContainsKey(productId))
+                {
+                    throw new PriceException($"Prices for product {productId} not found");
+                }
 
-            return price.PriceValue;
+                var (startDate, price) = prices[productId].FirstOrDefault(p => p.Key >= date);
+                if (price == null)
+                {
+                    throw new PriceException($"There is no price for specified date {date} for product {productId}");
+                }
+
+                return price.PriceValue;
+            }
         }
+
 
         public void AddPrice(Guid productId, Price price)
         {
-            pricesStorage.AddPrice(productId, price);
+            lock (syncObject)
+            {
+                if (prices.ContainsKey(productId))
+                {
+                    var (startDate, priceObject) = prices[productId].FirstOrDefault(p => p.Key == price.StartDate);
+                    if (priceObject != null)
+                    {
+                        prices[productId].Remove(startDate);
+                    }
+
+                    prices[productId].Add(price.StartDate, price);
+                }
+                else
+                {
+                    prices.Add(productId, new SortedList<DateTime, Price> { {price.StartDate, price} });
+                }
+            }
         }
 
         public void RemovePrice(Guid productId, DateTime startDate)
         {
-            pricesStorage.RemovePrice(productId, startDate);
+            lock (syncObject)
+            {
+                if (prices.ContainsKey(productId))
+                {
+                    var (startDateValue, price) = prices[productId].FirstOrDefault(p => p.Key == startDate);
+                    if (price != null)
+                    {
+                        prices[productId].Remove(startDate);
+                    }
+                    else
+                    {
+                        throw new PriceException($"Can't remove price with start date {startDate} for product {productId} cause such price doesn't exist");
+                    }
+                }
+                else
+                {
+                    throw new PriceException($"Can't remove price for product {productId} cause prices for this products don't exist");
+                }
+            }
         }
     }
 }
