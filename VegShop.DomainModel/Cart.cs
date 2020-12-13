@@ -10,7 +10,7 @@ namespace VegShop.DomainModel
         private readonly INomenclatureService nomenclatureService;
         private readonly IOffersCalculator offersCalculator;
         private readonly IOffersService offersService;
-        private readonly IWarehouseService warehouseService;
+        private readonly ICheckoutService checkoutService;
         private readonly IPriceService priceService;
 
         private readonly ConcurrentDictionary<Guid, CartItem> cartItems = new ConcurrentDictionary<Guid, CartItem>();
@@ -20,13 +20,13 @@ namespace VegShop.DomainModel
             IOffersCalculator offersCalculator,
             IOffersService offersService,
             IPriceService priceService,
-            IWarehouseService warehouseService)
+            ICheckoutService checkoutService)
         {
             this.nomenclatureService = nomenclatureService;
             this.offersCalculator = offersCalculator;
             this.offersService = offersService;
             this.priceService = priceService;
-            this.warehouseService = warehouseService;
+            this.checkoutService = checkoutService;
         }
 
         public void AddToCart(Guid productId, int quantity)
@@ -36,7 +36,7 @@ namespace VegShop.DomainModel
                 throw new CartException($"Product {productId} doesn't exist");
             }
 
-            warehouseService.AddToCart(this, productId, quantity);
+            checkoutService.AddToCart(this, productId, quantity);
         }
 
         public void RemoveFromCart(Guid productId, int quantity)
@@ -46,7 +46,7 @@ namespace VegShop.DomainModel
                 throw new CartException($"Product {productId} doesn't exist");
             }
 
-            warehouseService.RemoveFromCart(this, productId, quantity);
+            checkoutService.RemoveFromCart(this, productId, quantity);
         }
 
         public decimal GetTotalCost()
