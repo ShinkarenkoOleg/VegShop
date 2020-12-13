@@ -41,7 +41,7 @@ namespace VegShop.DomainModel
             return;
         }
 
-        public bool DoesProductExists(Guid productId)
+        public bool DoesProductExist(Guid productId)
         {
             return nomenclature.ContainsKey(productId);
         }

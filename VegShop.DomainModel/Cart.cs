@@ -20,8 +20,7 @@ namespace VegShop.DomainModel
             IOffersCalculator offersCalculator,
             IOffersService offersService,
             IPriceService priceService,
-            IWarehouseService warehouseService
-            )
+            IWarehouseService warehouseService)
         {
             this.nomenclatureService = nomenclatureService;
             this.offersCalculator = offersCalculator;
@@ -32,7 +31,7 @@ namespace VegShop.DomainModel
 
         public void AddToCart(Guid productId, int quantity)
         {
-            if (!nomenclatureService.DoesProductExists(productId))
+            if (!nomenclatureService.DoesProductExist(productId))
             {
                 throw new CartException($"Product {productId} doesn't exist");
             }
@@ -42,7 +41,7 @@ namespace VegShop.DomainModel
 
         public void RemoveFromCart(Guid productId, int quantity)
         {
-            if (!nomenclatureService.DoesProductExists(productId))
+            if (!nomenclatureService.DoesProductExist(productId))
             {
                 throw new CartException($"Product {productId} doesn't exist");
             }
