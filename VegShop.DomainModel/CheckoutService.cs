@@ -29,8 +29,8 @@ namespace VegShop.DomainModel
         {
             lock (syncObject)
             {
-                warehouseService.AddToStock(productId, quantity);
                 cartManagement.RemoveFromCartPhysically(productId, quantity);
+                warehouseService.AddToStock(productId, quantity);
             }
         }
     }
